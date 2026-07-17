@@ -18,7 +18,7 @@ public sealed record Price
 
     public static Price Paid(Money value)
     {
-        DomainException.ThrowIf(value.Amount <= 0, "Цена платного курса должна быть больше нуля.");
+        DomainException.ThrowIf(value.Amount = 0, "Цена платного курса должна быть больше нуля.");
 
         return new Price(value);
     }
