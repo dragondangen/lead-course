@@ -12,8 +12,6 @@ namespace LC.Host.Domain.Courses;
 /// </summary>
 public sealed class Course : AggregateRoot<CourseId>
 {
-    private readonly List<CourseMaterial> _materials = [];
-
     private Course()
     {
     }
@@ -41,8 +39,6 @@ public sealed class Course : AggregateRoot<CourseId>
 
     public DateTime CreatedAtUtc { get; private set; }
 
-    public IReadOnlyList<CourseMaterial> Materials => _materials.AsReadOnly();
-
     public static Course CreateDraft(OrganizationId organizationId, string title, string? description, Price price)
     {
         DomainException.ThrowIf(string.IsNullOrWhiteSpace(title), "У курса должно быть название.");
@@ -63,32 +59,19 @@ public sealed class Course : AggregateRoot<CourseId>
         Price = price;
     }
 
-    public void AddMaterial(string title, MaterialType type, FileId fileId)
-    {
-        EnsureNotArchived();
-
-        var nextOrder = _materials.Count == 0 ? 1 : _materials.Max(m => m.SortOrder) + 1;
-        _materials.Add(new CourseMaterial(title, type, fileId, nextOrder));
-    }
-
-    public void RemoveMaterial(CourseMaterialID materialId)
-    {
-        EnsureNotArchived();
-
-        var material = _materials.FirstOrDefault(m => m.Id == materialId)
-            ?? throw new DomainException("Материал не найден в курсе.");
-
-        _materials.Remove(material);
-    }
-
     /// <param name="organizationIsVerified">
     /// Флаг верификации организации (<see cref="Organization.IsVerified"/>), полученный application-слоем.
     /// </param>
-    public void Publish(bool organizationIsVerified)
+    /// <param name="hasAtLeastOneMaterial">
+    /// Признак наличия хотя бы одного материала. Материалы — отдельные агрегаты
+    /// (<see cref="CourseMaterial"/>), поэтому проверку делает application-слой запросом-счётчиком,
+    /// а не загрузкой всех материалов в курс.
+    /// </param>
+    public void Publish(bool organizationIsVerified, bool hasAtLeastOneMaterial)
     {
         DomainException.ThrowIf(Status != CourseStatus.Draft, "Опубликовать можно только черновик курса.");
         DomainException.ThrowIf(!organizationIsVerified, "Публиковать курсы может только верифицированная организация.");
-        DomainException.ThrowIf(_materials.Count == 0, "Нельзя опубликовать курс без учебных материалов.");
+        DomainException.ThrowIf(!hasAtLeastOneMaterial, "Нельзя опубликовать курс без учебных материалов.");
 
         Status = CourseStatus.Published;
         Raise(new CoursePublished(Id));
