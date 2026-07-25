@@ -21,9 +21,10 @@ public sealed class EnrollmentApplication : AggregateRoot<ApplicationId>
     private static readonly IReadOnlyDictionary<ApplicationStatus, ApplicationStatus[]> AllowedTransitions =
         new Dictionary<ApplicationStatus, ApplicationStatus[]>
         {
-            [ApplicationStatus.Received] = [ApplicationStatus.UnderReview, ApplicationStatus.Rejected],
-            [ApplicationStatus.UnderReview] = [ApplicationStatus.Agreed, ApplicationStatus.NotAgreed],
-            [ApplicationStatus.Agreed] = [ApplicationStatus.Approved, ApplicationStatus.Rejected],
+            [ApplicationStatus.Received] = [ApplicationStatus.UnderReview, ApplicationStatus.Rejected, ApplicationStatus.Withdrawn],
+            [ApplicationStatus.UnderReview] = [ApplicationStatus.Agreed, ApplicationStatus.NotAgreed, ApplicationStatus.Withdrawn],
+            [ApplicationStatus.Agreed] = [ApplicationStatus.Approved, ApplicationStatus.Rejected, ApplicationStatus.Withdrawn],
+            [ApplicationStatus.Approved] = [ApplicationStatus.Withdrawn],
             [ApplicationStatus.NotAgreed] = [ApplicationStatus.Rejected],
         };
 
@@ -84,6 +85,16 @@ public sealed class EnrollmentApplication : AggregateRoot<ApplicationId>
     {
         MoveTo(ApplicationStatus.UnderReview);
         Raise(new ApplicationTakenInReview(Id, ApplicantId));
+    }
+
+    public void Withdraw(bool cohortHasStarted)
+    {
+        DomainException.ThrowIf(cohortHasStarted, "После начала обучения заявку отозвать нельзя.");
+
+        var seatWasReserved = Status == ApplicationStatus.Approved; // До перехода
+
+        MoveTo(ApplicationStatus.Withdrawn);
+        Raise(new ApplicationWithdrawn(Id, CohortId, ApplicantId, seatWasReserved));
     }
 
     public void Agree()

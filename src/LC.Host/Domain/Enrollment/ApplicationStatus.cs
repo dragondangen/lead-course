@@ -23,4 +23,7 @@ public enum ApplicationStatus
 
     /// <summary>Отклонена. Терминальный статус.</summary>
     Rejected = 6,
+
+    /// <summary>Отозвана заявителем. Терминальный статус.</summary>
+    Withdrawn = 7,
 }

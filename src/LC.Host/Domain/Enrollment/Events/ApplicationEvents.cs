@@ -14,3 +14,5 @@ public sealed record ApplicationNotAgreed(ApplicationId ApplicationId, UserId Ap
 public sealed record ApplicationApproved(ApplicationId ApplicationId, CohortId CohortId, UserId ApplicantId) : DomainEvent;
 
 public sealed record ApplicationRejected(ApplicationId ApplicationId, CohortId CohortId, UserId ApplicantId, string Reason) : DomainEvent;
+
+public sealed record ApplicationWithdrawn(ApplicationId ApplicationId, CohortId CohortId, UserId ApplicantId, bool SeatWasReserved) : DomainEvent;
