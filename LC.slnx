@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LC.Host/LC.Host.csproj" />
+  </Folder>
+</Solution>
