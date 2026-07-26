@@ -92,9 +92,15 @@ public sealed class Cohort : AggregateRoot<CohortId>
         }
     }
 
-    /// <summary>Освободить место (одобренная заявка отозвана до старта обучения).</summary>
+    /// <summary>
+    /// Освободить место, занятое одобренной заявкой.
+    /// Допустимо только до начала обучения — симметрично <see cref="ReserveSeat"/>.
+    /// </summary>
     public void ReleaseSeat()
     {
+        DomainException.ThrowIf(
+            Status is not (CohortStatus.EnrollmentOpen or CohortStatus.EnrollmentClosed),
+            "Освободить место можно только до начала обучения.");
         DomainException.ThrowIf(ReservedSeats == 0, "На потоке нет занятых мест.");
 
         ReservedSeats--;
