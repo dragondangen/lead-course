@@ -9,6 +9,12 @@ public sealed record CohortEnrollmentClosed(
     CourseId CourseId,
     EnrollmentClosureReason Reason) : DomainEvent;
 
+/// <summary>
+/// Приём заявок возобновлён после освобождения места. Поднимается только если приём
+/// был закрыт автоматически по заполнению: закрытый вручную не переоткрывается.
+/// </summary>
+public sealed record CohortEnrollmentReopened(CohortId CohortId, CourseId CourseId) : DomainEvent;
+
 public sealed record CohortSeatReserved(CohortId CohortId, int ReservedSeats, int TotalSeats) : DomainEvent;
 
 public sealed record CohortStarted(CohortId CohortId, CourseId CourseId) : DomainEvent;
