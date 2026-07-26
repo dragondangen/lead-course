@@ -38,6 +38,13 @@ public sealed class Cohort : AggregateRoot<CohortId>
 
     public CohortStatus Status { get; private set; }
 
+    /// <summary>
+    /// Причина, по которой закрыт приём заявок. Заполнена, пока статус — <see cref="CohortStatus.EnrollmentClosed"/>.
+    /// Нужна, чтобы отличить автоматическое закрытие по заполнению мест от досрочного закрытия вручную:
+    /// первое допускает возобновление приёма, второе — нет.
+    /// </summary>
+    public EnrollmentClosureReason? ClosureReason { get; private set; }
+
     public string? CancellationReason { get; private set; }
 
     public int AvailableSeats => TotalSeats - ReservedSeats;
@@ -104,6 +111,7 @@ public sealed class Cohort : AggregateRoot<CohortId>
         DomainException.ThrowIf(ReservedSeats == 0, "На потоке нет занятых мест.");
 
         ReservedSeats--;
+        ReopenEnrollment();
     }
 
     public void Start()
@@ -158,6 +166,24 @@ public sealed class Cohort : AggregateRoot<CohortId>
             "Закрыть приём заявок можно только когда он открыт.");
 
         Status = CohortStatus.EnrollmentClosed;
+        ClosureReason = reason;
         Raise(new CohortEnrollmentClosed(Id, CourseId, reason));
+    }
+
+    /// <summary>
+    /// Возобновить приём заявок после освобождения места.
+    /// Возобновляется только приём, закрытый автоматически по заполнению мест:
+    /// досрочное закрытие вручную — решение организации, и отменять его освобождение места не должно.
+    /// </summary>
+    private void ReopenEnrollment()
+    {
+        if (Status != CohortStatus.EnrollmentClosed || ClosureReason != EnrollmentClosureReason.CapacityReached)
+        {
+            return;
+        }
+
+        Status = CohortStatus.EnrollmentOpen;
+        ClosureReason = null;
+        Raise(new CohortEnrollmentReopened(Id, CourseId));
     }
 }
